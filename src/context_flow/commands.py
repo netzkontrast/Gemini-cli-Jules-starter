@@ -49,6 +49,3 @@ model: claude-3-5-sonnet-20241022
 
     click.echo("Project initialized successfully.")
     click.echo(f"Run 'cd {project_name}' and then 'context-flow start \"Your Task\"' to begin.")
-
-# Update main.py to include the init command
-# (This step is implicit as I will update main.py next, but for now I am writing the logic)

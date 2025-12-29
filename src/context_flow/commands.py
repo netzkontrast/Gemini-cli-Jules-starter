@@ -15,11 +15,11 @@ def init(project_name):
     project_path = Path(project_name)
 
     if project_path.exists():
-        click.echo(f"Error: Directory '{project_name}' already exists.")
+        click.secho(f"❌ Error: Directory '{project_name}' already exists.", fg="red", bold=True)
         return
 
     # Create directory structure
-    click.echo(f"Initializing project '{project_name}'...")
+    click.secho(f"🎨 Initializing project '{project_name}'...", fg="blue")
     (project_path / "sessions").mkdir(parents=True)
     (project_path / "thoughts" / "ledgers").mkdir(parents=True)
     (project_path / "thoughts" / "handoffs").mkdir(parents=True)
@@ -37,7 +37,7 @@ def init(project_name):
         content = template.render() # No variables needed for the raw skill definition yet
         with open(skills_dir / f"{skill}.md", "w") as f:
             f.write(content)
-        click.echo(f"  Created skill: {skill}")
+        click.secho(f"  ✨ Created skill: {skill}", fg="green")
 
     # Create a basic configuration file
     config_content = """project_name: {}
@@ -47,8 +47,8 @@ model: claude-3-5-sonnet-20241022
     with open(project_path / "context_flow.yaml", "w") as f:
         f.write(config_content)
 
-    click.echo("Project initialized successfully.")
-    click.echo(f"Run 'cd {project_name}' and then 'context-flow start \"Your Task\"' to begin.")
+    click.secho("🎉 Project initialized successfully.", fg="green", bold=True)
+    click.secho(f"🚀 Run 'cd {project_name}' and then 'context-flow start \"Your Task\"' to begin.", fg="yellow")
 
 # Update main.py to include the init command
 # (This step is implicit as I will update main.py next, but for now I am writing the logic)

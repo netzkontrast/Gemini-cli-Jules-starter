@@ -1,0 +1,22 @@
+[
+  {
+    "timestamp": "2025-12-29T04:44:27.799925",
+    "input": "Audit the new skill",
+    "context_snapshot_len": 1109,
+    "response": "I have updated the plan and logged the interaction. (SIMULATED RESPONSE)",
+    "feedback": {
+      "rating": "5",
+      "comment": "Great job"
+    }
+  },
+  {
+    "timestamp": "2025-12-29T04:46:29.609041",
+    "input": "Test Command",
+    "context_snapshot_len": 1194,
+    "response": "I have updated the plan and logged the interaction. (SIMULATED RESPONSE)",
+    "feedback": {
+      "rating": "5",
+      "comment": "Good"
+    }
+  }
+]

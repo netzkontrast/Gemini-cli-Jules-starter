@@ -1,0 +1,2 @@
+command = "echo 'Running analysis in ${workspacePath} with args: {{args}}'"
+description = "Runs a system analysis"

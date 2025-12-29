@@ -1,0 +1,3 @@
+command = "echo 'Testing mission...'"
+description = "Create tests for completed mission"
+path = "workflows/test-mission.md"

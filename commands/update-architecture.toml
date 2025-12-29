@@ -1,0 +1,3 @@
+command = "echo 'Updating architecture docs...'"
+description = "Update architecture documentation"
+path = "workflows/update-architecture.md"

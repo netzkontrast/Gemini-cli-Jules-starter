@@ -1,0 +1,3 @@
+command = "echo 'Starting frontend analysis...'"
+description = "Analyze frontend architecture"
+path = "workflows/analyze-frontend.md"

@@ -1,0 +1,3 @@
+command = "echo 'Duplicating and Analyzing {{args}}...'"
+description = "Duplicate a file and analyze it for refactoring"
+path = "workflows/duplicate-and-analyze.md"

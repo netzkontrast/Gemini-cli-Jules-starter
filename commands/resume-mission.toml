@@ -1,0 +1,3 @@
+command = "echo 'Resuming mission...'"
+description = "Resume in-progress mission"
+path = "workflows/resume-mission.md"

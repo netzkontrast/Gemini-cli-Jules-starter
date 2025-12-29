@@ -1,0 +1,3 @@
+command = "echo 'Extending task...'"
+description = "Add missions to existing task"
+path = "workflows/extend-task.md"

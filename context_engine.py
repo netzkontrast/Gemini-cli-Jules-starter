@@ -41,8 +41,11 @@ class HistoryLogger:
 
 class MarkdownLoader:
     def _parse_frontmatter(self, filepath):
-        with open(filepath, 'r') as f:
-            content = f.read()
+        try:
+            with open(filepath, 'r') as f:
+                content = f.read()
+        except FileNotFoundError:
+            return {"error": f"File not found: {filepath}", "path": filepath}
 
         parts = content.split('---', 2)
         if len(parts) >= 3:
@@ -53,7 +56,8 @@ class MarkdownLoader:
             except yaml.YAMLError as e:
                 return {"error": str(e), "path": filepath}
         else:
-             return {"error": "No YAML frontmatter found", "path": filepath}
+             # Treat entire file as body if no frontmatter
+             return {"metadata": {}, "body": content.strip(), "path": filepath}
 
 class SkillLoader(MarkdownLoader):
     def __init__(self, skills_dir="skills"):
@@ -91,6 +95,13 @@ class AgentLoader(MarkdownLoader):
                     agents.append(result)
         return agents
 
+    def load_main_agent(self, filepath="agent.md"):
+        if os.path.exists(filepath):
+            result = self._parse_frontmatter(filepath)
+            result["type"] = "main_agent"
+            return result
+        return None
+
 class WorkflowLoader(MarkdownLoader):
     def __init__(self, workflows_dir="workflows"):
         self.workflows_dir = workflows_dir
@@ -106,13 +117,14 @@ class WorkflowLoader(MarkdownLoader):
                     filepath = os.path.join(root, file)
                     result = self._parse_frontmatter(filepath)
                     # Often workflows in the input don't have frontmatter, they are just MD.
-                    # If error "No YAML frontmatter found", we treat the whole content as body.
-                    if "error" in result and "No YAML frontmatter" in result["error"]:
-                        with open(filepath, 'r') as f:
-                            body = f.read()
-                        result = {"type": "workflow", "metadata": {"name": os.path.basename(file)}, "body": body, "path": filepath}
-                    else:
-                        result["type"] = "workflow"
+                    if "error" in result and "No YAML frontmatter" in result.get("error", ""):
+                        # Fallback handled in MarkdownLoader now, but ensuring consistent type
+                        pass
+
+                    if not result.get("metadata"):
+                        result["metadata"] = {"name": os.path.basename(file)}
+
+                    result["type"] = "workflow"
                     workflows.append(result)
         return workflows
 
@@ -190,6 +202,9 @@ class ContextEngine:
         workflows = self.workflow_loader.load_workflows()
         commands = self.command_loader.load_commands()
 
+        # Load the Main Agent (Navigation)
+        main_agent = self.agent_loader.load_main_agent()
+
         project_context = self.assembler.get_project_context()
         workflow_state = self.assembler.get_workflow_state()
 
@@ -197,10 +212,21 @@ class ContextEngine:
         project_context = self._resolve_variables(project_context)
         workflow_state = self._resolve_variables(workflow_state)
 
-        full_context = f"""
+        # Construct the System Instruction
+        if main_agent:
+            system_instruction = f"""
+# SYSTEM IDENTITY: {main_agent['metadata'].get('name', 'Navigator')}
+{main_agent['body']}
+"""
+        else:
+            system_instruction = """
 # System Instructions
 You are an intelligent agent operating within the Gemini Framework.
 Use the provided Context, Skills, Commands, Agents, and Workflows to fulfill the user request.
+"""
+
+        full_context = f"""
+{system_instruction}
 
 ## User Request
 {user_input}
@@ -211,7 +237,7 @@ Use the provided Context, Skills, Commands, Agents, and Workflows to fulfill the
 ## Workflow State
 {workflow_state}
 
-## Available Agents (Personas)
+## Specialized Agents (Your Team)
 """
         for agent in agents:
             if "metadata" in agent:
@@ -220,7 +246,7 @@ Use the provided Context, Skills, Commands, Agents, and Workflows to fulfill the
                 desc = self._resolve_variables(desc)
                 full_context += f"- {name}: {desc}\n"
 
-        full_context += "\n## Available Workflows\n"
+        full_context += "\n## Available Workflows (Your Tools)\n"
         for wf in workflows:
              # Workflows might not have metadata if no frontmatter
              if "metadata" in wf:
@@ -252,7 +278,7 @@ Use the provided Context, Skills, Commands, Agents, and Workflows to fulfill the
         return "I have updated the plan and logged the interaction. (SIMULATED RESPONSE)"
 
     def run_interactive(self):
-        print("Welcome to Gemini Agent Orchestrator. Type 'exit' to quit.")
+        print("Welcome to Gemini Agent Orchestrator (Navigation Mode). Type 'exit' to quit.")
         while True:
             try:
                 user_input = input("\nUser> ")

@@ -1,0 +1,21 @@
+---
+model: {{ model|default("claude-3-5-sonnet-20241022") }}
+{% if inputs %}
+_inputs:
+{% for key, value in inputs.items() %}
+  {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+---
+
+# Task: {{ task_name }}
+
+**Goal:** {{ task_goal }}
+
+## Context
+{% if ledger_path %}
+@{{ ledger_path }}
+{% endif %}
+
+## Instructions
+{{ instructions }}

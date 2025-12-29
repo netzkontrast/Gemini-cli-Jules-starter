@@ -1,0 +1,3 @@
+command = "echo 'Resuming task...'"
+description = "Resume existing task"
+path = "workflows/resume-task.md"

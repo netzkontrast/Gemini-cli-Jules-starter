@@ -1,0 +1,3 @@
+command = "echo 'Starting project analysis...'"
+description = "Analyze full project structure"
+path = "workflows/analyze-project.md"

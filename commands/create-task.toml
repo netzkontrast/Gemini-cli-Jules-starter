@@ -1,0 +1,3 @@
+command = "echo 'Creating new task...'"
+description = "Create a new focused task"
+path = "workflows/create-task.md"

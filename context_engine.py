@@ -39,7 +39,23 @@ class HistoryLogger:
             json.dump(history, f, indent=2)
         print(f"\n[System] Interaction logged to {self.history_file}")
 
-class SkillLoader:
+class MarkdownLoader:
+    def _parse_frontmatter(self, filepath):
+        with open(filepath, 'r') as f:
+            content = f.read()
+
+        parts = content.split('---', 2)
+        if len(parts) >= 3:
+            try:
+                metadata = yaml.safe_load(parts[1])
+                body = parts[2].strip()
+                return {"metadata": metadata, "body": body, "path": filepath}
+            except yaml.YAMLError as e:
+                return {"error": str(e), "path": filepath}
+        else:
+             return {"error": "No YAML frontmatter found", "path": filepath}
+
+class SkillLoader(MarkdownLoader):
     def __init__(self, skills_dir="skills"):
         self.skills_dir = skills_dir
 
@@ -52,23 +68,53 @@ class SkillLoader:
             for file in files:
                 if file == "SKILL.md":
                     filepath = os.path.join(root, file)
-                    skills.append(self._parse_skill(filepath))
+                    result = self._parse_frontmatter(filepath)
+                    result["type"] = "skill"
+                    skills.append(result)
         return skills
 
-    def _parse_skill(self, filepath):
-        with open(filepath, 'r') as f:
-            content = f.read()
+class AgentLoader(MarkdownLoader):
+    def __init__(self, agents_dir="agents"):
+        self.agents_dir = agents_dir
 
-        parts = content.split('---', 2)
-        if len(parts) >= 3:
-            try:
-                metadata = yaml.safe_load(parts[1])
-                body = parts[2].strip()
-                return {"type": "skill", "metadata": metadata, "body": body, "path": filepath}
-            except yaml.YAMLError as e:
-                return {"type": "skill", "error": str(e), "path": filepath}
-        else:
-             return {"type": "skill", "error": "No YAML frontmatter found", "path": filepath}
+    def load_agents(self):
+        agents = []
+        if not os.path.exists(self.agents_dir):
+            return agents
+
+        for root, dirs, files in os.walk(self.agents_dir):
+            for file in files:
+                if file.endswith(".md"):
+                    filepath = os.path.join(root, file)
+                    result = self._parse_frontmatter(filepath)
+                    result["type"] = "agent"
+                    agents.append(result)
+        return agents
+
+class WorkflowLoader(MarkdownLoader):
+    def __init__(self, workflows_dir="workflows"):
+        self.workflows_dir = workflows_dir
+
+    def load_workflows(self):
+        workflows = []
+        if not os.path.exists(self.workflows_dir):
+            return workflows
+
+        for root, dirs, files in os.walk(self.workflows_dir):
+            for file in files:
+                if file.endswith(".md"):
+                    filepath = os.path.join(root, file)
+                    result = self._parse_frontmatter(filepath)
+                    # Often workflows in the input don't have frontmatter, they are just MD.
+                    # If error "No YAML frontmatter found", we treat the whole content as body.
+                    if "error" in result and "No YAML frontmatter" in result["error"]:
+                        with open(filepath, 'r') as f:
+                            body = f.read()
+                        result = {"type": "workflow", "metadata": {"name": os.path.basename(file)}, "body": body, "path": filepath}
+                    else:
+                        result["type"] = "workflow"
+                    workflows.append(result)
+        return workflows
 
 class CommandLoader:
     def __init__(self, commands_dir="commands"):
@@ -91,25 +137,27 @@ class CommandLoader:
         return commands
 
 class ContextAssembler:
-    def __init__(self, context_dir="context", workflow_dir="workflows"):
+    def __init__(self, context_dir="context", state_dir="state"):
         self.context_dir = context_dir
-        self.workflow_dir = workflow_dir
+        self.state_dir = state_dir
 
     def get_project_context(self):
         context = ""
         if os.path.exists(self.context_dir):
-            for file in ["GEMINI.md", "TECH_STACK.md"]:
-                filepath = os.path.join(self.context_dir, file)
-                if os.path.exists(filepath):
-                    with open(filepath, 'r') as f:
-                        context += f"\n--- {file} ---\n{f.read()}\n"
+            # Load all .md files in context dir
+            for root, dirs, files in os.walk(self.context_dir):
+                for file in files:
+                    if file.endswith(".md"):
+                        filepath = os.path.join(root, file)
+                        with open(filepath, 'r') as f:
+                            context += f"\n--- {file} ---\n{f.read()}\n"
         return context
 
     def get_workflow_state(self):
         state = ""
-        if os.path.exists(self.workflow_dir):
+        if os.path.exists(self.state_dir):
             for file in ["PLAN.md", "TODO.md"]:
-                filepath = os.path.join(self.workflow_dir, file)
+                filepath = os.path.join(self.state_dir, file)
                 if os.path.exists(filepath):
                     with open(filepath, 'r') as f:
                         state += f"\n--- {file} ---\n{f.read()}\n"
@@ -118,6 +166,8 @@ class ContextAssembler:
 class ContextEngine:
     def __init__(self):
         self.skill_loader = SkillLoader()
+        self.agent_loader = AgentLoader()
+        self.workflow_loader = WorkflowLoader()
         self.command_loader = CommandLoader()
         self.assembler = ContextAssembler()
         self.logger = HistoryLogger()
@@ -130,27 +180,27 @@ class ContextEngine:
         return text.replace("${workspacePath}", self.workspace_path)
 
     def _fill_args(self, text, user_input):
-        """Naive implementation to fill {{args}} with the user input."""
-        # In a real parser, we would extract arguments more intelligently.
-        # Here we just inject the raw user string.
         if not isinstance(text, str):
             return text
         return text.replace("{{args}}", user_input)
 
     def build_context(self, user_input):
         skills = self.skill_loader.load_skills()
+        agents = self.agent_loader.load_agents()
+        workflows = self.workflow_loader.load_workflows()
         commands = self.command_loader.load_commands()
+
         project_context = self.assembler.get_project_context()
         workflow_state = self.assembler.get_workflow_state()
 
-        # Apply Variable Resolution to Context
+        # Apply Variable Resolution
         project_context = self._resolve_variables(project_context)
         workflow_state = self._resolve_variables(workflow_state)
 
         full_context = f"""
 # System Instructions
 You are an intelligent agent operating within the Gemini Framework.
-Use the provided Context, Skills, and Commands to fulfill the user request.
+Use the provided Context, Skills, Commands, Agents, and Workflows to fulfill the user request.
 
 ## User Request
 {user_input}
@@ -161,22 +211,34 @@ Use the provided Context, Skills, and Commands to fulfill the user request.
 ## Workflow State
 {workflow_state}
 
-## Available Skills
+## Available Agents (Personas)
 """
+        for agent in agents:
+            if "metadata" in agent:
+                name = agent['metadata'].get('name', 'Unknown')
+                desc = agent['metadata'].get('description', '')
+                desc = self._resolve_variables(desc)
+                full_context += f"- {name}: {desc}\n"
+
+        full_context += "\n## Available Workflows\n"
+        for wf in workflows:
+             # Workflows might not have metadata if no frontmatter
+             if "metadata" in wf:
+                 name = wf['metadata'].get('name', os.path.basename(wf['path']))
+                 full_context += f"- {name}\n"
+
+        full_context += "\n## Available Skills\n"
         for skill in skills:
             if "metadata" in skill:
                 name = skill['metadata'].get('name', 'Unknown')
                 desc = skill['metadata'].get('description', '')
-                # Resolve vars in skill description
                 desc = self._resolve_variables(desc)
                 full_context += f"- {name}: {desc}\n"
 
         full_context += "\n## Available Commands\n"
         for cmd in commands:
-            # Resolve vars in command data (assuming simple structure)
             path = self._resolve_variables(cmd.get('path'))
             full_context += f"- {path}\n"
-            # Naive arg filling visualization
             if "command" in cmd.get('data', {}):
                  command_str = cmd['data']['command']
                  command_str = self._resolve_variables(command_str)
@@ -187,7 +249,6 @@ Use the provided Context, Skills, and Commands to fulfill the user request.
 
     def simulate_agent_response(self, context):
         print("\n[Thinking...] Analyzing context...")
-        # Simulate processing time or specific logic based on input
         return "I have updated the plan and logged the interaction. (SIMULATED RESPONSE)"
 
     def run_interactive(self):
@@ -200,6 +261,9 @@ Use the provided Context, Skills, and Commands to fulfill the user request.
 
                 context = self.build_context(user_input)
                 # print(f"\n--- DEBUG: Context Length: {len(context)} chars ---")
+
+                # In debug mode, we could print the context
+                # print(context)
 
                 response = self.simulate_agent_response(context)
                 print(f"\nAgent> {response}")

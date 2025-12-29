@@ -1,0 +1,3 @@
+command = "echo 'Creating new mission...'"
+description = "Transform task into missions"
+path = "workflows/create-mission.md"

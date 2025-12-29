@@ -14,10 +14,10 @@ def start(task_description):
 
     # Verify we are in a project
     if not Path("context_flow.yaml").exists():
-        click.echo("Error: Not a context-flow project. Run 'context-flow init <name>' first.")
+        click.secho("❌ Error: Not a context-flow project. Run 'context-flow init <name>' first.", fg="red", bold=True)
         return
 
-    click.echo(f"Starting new task: {task_description}")
+    click.secho(f"🚀 Starting new task: {task_description}", fg="blue", bold=True)
 
     # Initialize Jinja2 environment
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
@@ -36,7 +36,7 @@ def start(task_description):
 
     with open(ledger_path, "w") as f:
         f.write(ledger_content)
-    click.echo(f"  Initialized Ledger: {ledger_path}")
+    click.secho(f"  📒 Initialized Ledger: {ledger_path}", fg="green")
 
     # 2. Generate the "Origami" Decomposition Prompt
     # This combines the "Decomposition" skill into a prompt that the user runs
@@ -59,6 +59,6 @@ def start(task_description):
     with open(session_file, "w") as f:
         f.write(prompt_content)
 
-    click.echo(f"  Created Session Prompt: {session_file}")
+    click.secho(f"  ✨ Created Session Prompt: {session_file}", fg="green")
     click.echo("\nTo execute this step (if mdflow is installed):")
-    click.echo(f"  mdflow {session_file}")
+    click.secho(f"  mdflow {session_file}", fg="yellow", bold=True)

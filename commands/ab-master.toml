@@ -1,3 +1,0 @@
-command = "echo 'Running ab-master for workflow: {{args}}'"
-description = "Master controller for the AB Method workflows"
-path = "workflows/ab-master.md"

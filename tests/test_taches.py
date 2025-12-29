@@ -1,7 +1,5 @@
 from click.testing import CliRunner
 from taches.cli import cli
-from taches.commands.consider import PARETO_TEMPLATE
-from taches.skills.create_plans import BRIEF_TEMPLATE, ROADMAP_TEMPLATE
 import os
 
 def test_consider_pareto():
@@ -9,21 +7,28 @@ def test_consider_pareto():
     result = runner.invoke(cli, ['consider', 'pareto', 'testing context'])
     assert result.exit_code == 0
     assert "Apply Pareto's principle to testing context" in result.output
-    assert "<output_format>" in result.output
 
-def test_plan_init_and_status():
+def test_blueprint_workflow():
     runner = CliRunner()
     with runner.isolated_filesystem():
-        # Test init
-        result = runner.invoke(cli, ['plan', 'init'])
+        # 1. Plan
+        result = runner.invoke(cli, ['blueprint', 'plan', 'Test Goal'])
         assert result.exit_code == 0
-        assert "Initialized planning structure" in result.output
-        assert os.path.exists('.planning/BRIEF.md')
-        assert os.path.exists('.planning/ROADMAP.md')
-        assert os.path.exists('.planning/phases')
+        assert os.path.exists('PLAN.md')
+        assert "Test Goal" in open('PLAN.md').read()
 
-        # Test status
-        result = runner.invoke(cli, ['plan', 'status'])
+        # 2. Define
+        result = runner.invoke(cli, ['blueprint', 'define'])
         assert result.exit_code == 0
-        assert "✅ BRIEF.md" in result.output
-        assert "✅ ROADMAP.md" in result.output
+        assert os.path.exists('TODO.md')
+
+        # 3. Implement
+        result = runner.invoke(cli, ['blueprint', 'implement', 'Task 1'])
+        assert result.exit_code == 0
+        assert os.path.exists('ACT.md')
+        assert "Task 1" in open('ACT.md').read()
+
+        # 4. Test
+        result = runner.invoke(cli, ['blueprint', 'test'])
+        assert result.exit_code == 0
+        assert "✅ ACT.md found" in result.output

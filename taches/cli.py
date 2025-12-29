@@ -1,14 +1,14 @@
 import click
 from taches.commands.consider import consider
-from taches.skills.create_plans import plan
+from taches.commands.workflow import blueprint
 
 @click.group()
 def cli():
-    """Taches CLI: A collection of Claude Code resources simulated for Gemini."""
+    """Taches CLI: Blueprint Workflow & Thinking Models for Gemini."""
     pass
 
 cli.add_command(consider)
-cli.add_command(plan)
+cli.add_command(blueprint)
 
 if __name__ == '__main__':
     cli()

@@ -16,9 +16,10 @@ def run_command(name, arguments):
     engine = ContextEngine()
     try:
         result = engine.execute("command", name, arguments)
-        click.echo(result)
+        click.secho(result, fg="green")
     except Exception as e:
-        click.echo(f"Error executing command: {e}")
+        click.secho(f"❌ Error executing command: {e}", fg="red", bold=True)
+        exit(1)
 
 @click.command()
 @click.argument("name")
@@ -28,9 +29,10 @@ def run_skill(name, arguments):
     engine = ContextEngine()
     try:
         result = engine.execute("skill", name, arguments)
-        click.echo(result)
+        click.secho(result, fg="green")
     except Exception as e:
-        click.echo(f"Error executing skill: {e}")
+        click.secho(f"❌ Error executing skill: {e}", fg="red", bold=True)
+        exit(1)
 
 cli.add_command(init)
 cli.add_command(start)

@@ -1,4 +1,5 @@
 import os
+import sys
 import click
 import shutil
 from pathlib import Path
@@ -16,7 +17,7 @@ def init(project_name):
 
     if project_path.exists():
         click.secho(f"❌ Error: Directory '{project_name}' already exists.", fg="red", bold=True)
-        return
+        sys.exit(1)
 
     # Create directory structure
     click.secho(f"🎨 Initializing project '{project_name}'...", fg="blue")

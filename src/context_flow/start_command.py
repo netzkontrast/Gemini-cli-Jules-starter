@@ -1,3 +1,4 @@
+import sys
 import click
 import datetime
 from pathlib import Path
@@ -15,7 +16,7 @@ def start(task_description):
     # Verify we are in a project
     if not Path("context_flow.yaml").exists():
         click.secho("❌ Error: Not a context-flow project. Run 'context-flow init <name>' first.", fg="red", bold=True)
-        return
+        sys.exit(1)
 
     click.secho(f"🚀 Starting new task: {task_description}", fg="blue", bold=True)
 

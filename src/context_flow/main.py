@@ -1,3 +1,4 @@
+import sys
 import click
 from context_flow.commands import init
 from context_flow.start_command import start
@@ -18,7 +19,8 @@ def run_command(name, arguments):
         result = engine.execute("command", name, arguments)
         click.echo(result)
     except Exception as e:
-        click.echo(f"Error executing command: {e}")
+        click.secho(f"Error executing command: {e}", fg="red")
+        sys.exit(1)
 
 @click.command()
 @click.argument("name")
@@ -30,7 +32,8 @@ def run_skill(name, arguments):
         result = engine.execute("skill", name, arguments)
         click.echo(result)
     except Exception as e:
-        click.echo(f"Error executing skill: {e}")
+        click.secho(f"Error executing skill: {e}", fg="red")
+        sys.exit(1)
 
 cli.add_command(init)
 cli.add_command(start)

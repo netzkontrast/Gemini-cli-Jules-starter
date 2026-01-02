@@ -1,4 +1,5 @@
 import click
+import sys
 from context_flow.commands import init
 from context_flow.start_command import start
 from context_flow.engine import ContextEngine
@@ -14,11 +15,16 @@ def cli():
 def run_command(name, arguments):
     """Executes a command (e.g., sdd:01-specify)."""
     engine = ContextEngine()
+    click.secho(f"🚀 Running command '{name}'...", fg="blue")
+    click.secho("-" * 40, dim=True)
     try:
         result = engine.execute("command", name, arguments)
         click.echo(result)
+        click.secho("-" * 40, dim=True)
+        click.secho("✅ Command executed successfully.", fg="green")
     except Exception as e:
-        click.echo(f"Error executing command: {e}")
+        click.secho(f"❌ Error executing command: {e}", fg="red", bold=True)
+        sys.exit(1)
 
 @click.command()
 @click.argument("name")
@@ -26,11 +32,16 @@ def run_command(name, arguments):
 def run_skill(name, arguments):
     """Executes a skill (e.g., create-plans)."""
     engine = ContextEngine()
+    click.secho(f"🚀 Running skill '{name}'...", fg="blue")
+    click.secho("-" * 40, dim=True)
     try:
         result = engine.execute("skill", name, arguments)
         click.echo(result)
+        click.secho("-" * 40, dim=True)
+        click.secho("✅ Skill executed successfully.", fg="green")
     except Exception as e:
-        click.echo(f"Error executing skill: {e}")
+        click.secho(f"❌ Error executing skill: {e}", fg="red", bold=True)
+        sys.exit(1)
 
 cli.add_command(init)
 cli.add_command(start)
